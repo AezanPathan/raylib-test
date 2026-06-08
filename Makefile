@@ -1,10 +1,16 @@
 CC=gcc
-
-CFLAGS=
 LIBS=-lraylib -lm
 
-all:
+run:
+	$(CC) main.c -o game $(LIBS)
+	./game
+
+cube:
+	$(CC) cubegame.c -o cube $(LIBS)
+	./cube
+
+build:
 	$(CC) main.c -o game $(LIBS)
 
-run: all
-	./game
+clean:
+	rm -f game cube

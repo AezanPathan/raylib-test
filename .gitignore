@@ -1,0 +1,13 @@
+# Build output
+game
+cube
+*.o
+
+# VS Code
+.vscode/
+
+# Linux temp files
+*.swp
+
+# OS junk
+.DS_Store
