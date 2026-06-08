@@ -97,6 +97,11 @@ int main(void)
         if (IsKeyDown(KEY_E))
             cameraAngle += 0.02f;
 
+        float mouseDelta =
+            GetMouseDelta().x;
+
+        cameraAngle += mouseDelta * 0.01f;
+
         camera.position.x =
             player.position.x + cosf(cameraAngle) * 6.0f;
 
