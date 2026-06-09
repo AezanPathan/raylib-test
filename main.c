@@ -74,22 +74,16 @@ int main(void)
         UpdatePlayer(&player);
         //  FollowPlayerCamera(&camera, &player);
 
-        if (IsKeyPressed(KEY_KP_1))
-            direction = 0;
-        if (IsKeyPressed(KEY_KP_2))
-            direction = 1;
-        if (IsKeyPressed(KEY_KP_3))
-            direction = 2;
-        if (IsKeyPressed(KEY_KP_4))
-            direction = 3;
-        if (IsKeyPressed(KEY_KP_5))
-            direction = 4;
-        if (IsKeyPressed(KEY_KP_6))
-            direction = 5;
-        if (IsKeyPressed(KEY_KP_7))
-            direction = 6;
-        if (IsKeyPressed(KEY_KP_8))
-            direction = 7;
+        float angleDegrees =  cameraAngle * RAD2DEG;
+
+        while (angleDegrees < 0)
+            angleDegrees += 360;
+
+        while (angleDegrees >= 360)
+            angleDegrees -= 360;
+
+        direction =
+            (int)((angleDegrees + 22.5f) / 45.0f) % 8;
 
         if (IsKeyDown(KEY_Q))
             cameraAngle -= 0.02f;
@@ -100,7 +94,7 @@ int main(void)
         float mouseDelta =
             GetMouseDelta().x;
 
-        cameraAngle += mouseDelta * 0.01f;
+        cameraAngle += mouseDelta * 0.003f;
 
         camera.position.x =
             player.position.x + cosf(cameraAngle) * 6.0f;
@@ -119,7 +113,10 @@ int main(void)
 
         BeginMode3D(camera);
 
-        DrawGrid(10, 1.0f);
+        DrawPlane(
+            (Vector3){0, -2, 0},
+            (Vector2){20, 20},
+            DARKGRAY);
 
         Rectangle source = {
             direction * 32,
@@ -148,6 +145,24 @@ int main(void)
             &player.speed,
             0.01f,
             1.0f);
+
+        DrawText(
+    TextFormat(
+        "Angle: %.1f",
+        angleDegrees),
+    10,
+    10,
+    20,
+    BLACK);
+
+DrawText(
+    TextFormat(
+        "Direction: %d",
+        direction),
+    10,
+    35,
+    20,
+    BLACK);
 
         EndDrawing();
     }
