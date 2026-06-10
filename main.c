@@ -1,6 +1,7 @@
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "external/raygui.h"
+#include "raymath.h"
 
 typedef struct
 {
@@ -43,6 +44,21 @@ void FollowPlayerCamera(Camera3D *camera, Player *player)
     camera->target = player->position;
 }
 
+int GetDirectionFromAngle(float angleRadians, int totalDirections)
+{
+    float angleDegrees = angleRadians * RAD2DEG;
+
+    while (angleDegrees < 0)
+        angleDegrees += 360.0f;
+
+    while (angleDegrees >= 360.0f)
+        angleDegrees -= 360.0f;
+
+    float sliceSize = 360.0f / totalDirections;
+
+    return (int)((angleDegrees + sliceSize / 2.0f) / sliceSize) % totalDirections;
+}
+
 // --------------------
 // Main
 // --------------------
@@ -66,24 +82,34 @@ int main(void)
 
     Texture2D hero = LoadTexture("assets/16x32 Rotate-Sheet.png");
 
+    Texture2D front = LoadTexture("assets/front.png");
+    Texture2D side = LoadTexture("assets/side.png");
+    Texture2D back = LoadTexture("assets/back.png");
+
+    Material frontMat = LoadMaterialDefault();
+    frontMat.maps[MATERIAL_MAP_DIFFUSE].texture = front;
+
+    Material sideMat = LoadMaterialDefault();
+    sideMat.maps[MATERIAL_MAP_DIFFUSE].texture = side;
+
+    Material backMat = LoadMaterialDefault();
+    backMat.maps[MATERIAL_MAP_DIFFUSE].texture = back;
+
+    Mesh quadMesh = GenMeshPlane(2.0f, 4.0f, 1, 1);
+
+    Material material = LoadMaterialDefault();
+    material.maps[MATERIAL_MAP_DIFFUSE].texture = hero;
+
     int direction = 0;
+
+    SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
         // Update
         UpdatePlayer(&player);
-        //  FollowPlayerCamera(&camera, &player);
 
-        float angleDegrees =  cameraAngle * RAD2DEG;
-
-        while (angleDegrees < 0)
-            angleDegrees += 360;
-
-        while (angleDegrees >= 360)
-            angleDegrees -= 360;
-
-        direction =
-            (int)((angleDegrees + 22.5f) / 45.0f) % 8;
+        direction = GetDirectionFromAngle(cameraAngle, 8);
 
         if (IsKeyDown(KEY_Q))
             cameraAngle -= 0.02f;
@@ -96,14 +122,11 @@ int main(void)
 
         cameraAngle += mouseDelta * 0.003f;
 
-        camera.position.x =
-            player.position.x + cosf(cameraAngle) * 6.0f;
+        camera.position.x = player.position.x + cosf(cameraAngle) * 6.0f;
 
-        camera.position.z =
-            player.position.z + sinf(cameraAngle) * 6.0f;
+        camera.position.z = player.position.z + sinf(cameraAngle) * 6.0f;
 
-        camera.position.y =
-            player.position.y + 4.0f;
+        camera.position.y = player.position.y + 4.0f;
 
         camera.target = player.position;
 
@@ -113,10 +136,7 @@ int main(void)
 
         BeginMode3D(camera);
 
-        DrawPlane(
-            (Vector3){0, -2, 0},
-            (Vector2){20, 20},
-            DARKGRAY);
+        DrawPlane((Vector3){0, -2, 0}, (Vector2){20, 20}, DARKGRAY);
 
         Rectangle source = {
             direction * 32,
@@ -124,13 +144,58 @@ int main(void)
             32,
             32};
 
-        DrawBillboardRec(
-            camera,
-            hero,
-            source,
-            player.position,
-            (Vector2){2.0f, 4.0f},
-            WHITE);
+        Vector3 positions[3] = {
+            {0, 0, 0},
+            {0.3f, 0, 0},
+            {-0.3f, 0, 0}};
+
+        Rectangle frontFrame = {0, 0, 32, 32};
+        Rectangle sideFrame = {64, 0, 32, 32};
+        Rectangle backFrame = {128, 0, 32, 32};
+
+        // DrawBillboardRec(camera, hero, frontFrame, positions[0], (Vector2){2, 4}, WHITE);
+
+        //  DrawBillboardRec(camera, hero, sideFrame, positions[1], (Vector2){2, 4}, WHITE);
+
+        //  DrawBillboardRec(camera, hero, backFrame, positions[2], (Vector2){2, 4}, WHITE);
+
+        Matrix transform1 =
+            MatrixMultiply(
+                MatrixRotateY(0.0f),
+                MatrixTranslate(
+                    0.0f,
+                    2.0f,
+                    0.0f));
+
+        Matrix transform2 =
+            MatrixMultiply(
+                MatrixRotateY(DEG2RAD * 45.0f),
+                MatrixTranslate(
+                    0.3f,
+                    2.0f,
+                    0.0f));
+
+        Matrix transform3 =
+            MatrixMultiply(
+                MatrixRotateY(DEG2RAD * 90.0f),
+                MatrixTranslate(
+                    -0.3f,
+                    2.0f,
+                    0.0f));
+
+        DrawMesh(quadMesh, frontMat, transform1);
+
+        DrawMesh(quadMesh, sideMat, transform2);
+
+        DrawMesh(quadMesh, backMat, transform3);
+        //   DrawMesh(quadMesh, material, MatrixTranslate(player.position.x, player.position.y + 2.0f, player.position.z));
+        // DrawBillboardRec(
+        //     camera,
+        //     hero,
+        //     source,
+        //     player.position,
+        //     (Vector2){2.0f, 4.0f},
+        //     WHITE);
 
         EndMode3D();
 
@@ -147,22 +212,13 @@ int main(void)
             1.0f);
 
         DrawText(
-    TextFormat(
-        "Angle: %.1f",
-        angleDegrees),
-    10,
-    10,
-    20,
-    BLACK);
-
-DrawText(
-    TextFormat(
-        "Direction: %d",
-        direction),
-    10,
-    35,
-    20,
-    BLACK);
+            TextFormat(
+                "Direction: %d",
+                direction),
+            10,
+            35,
+            20,
+            BLACK);
 
         EndDrawing();
     }
