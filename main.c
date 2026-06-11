@@ -2,6 +2,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "external/raygui.h"
 #include "raymath.h"
+#include "rlgl.h"
 
 typedef struct
 {
@@ -95,7 +96,8 @@ int main(void)
     Material backMat = LoadMaterialDefault();
     backMat.maps[MATERIAL_MAP_DIFFUSE].texture = back;
 
-    Mesh quadMesh = GenMeshPlane(2.0f, 4.0f, 1, 1);
+    // Mesh quadMesh = GenMeshPlane(2.0f, 4.0f, 1, 1);
+    Mesh quadMesh = GenMeshPlane(1.0f, 2.0f, 1, 1);
 
     Material material = LoadMaterialDefault();
     material.maps[MATERIAL_MAP_DIFFUSE].texture = hero;
@@ -104,18 +106,35 @@ int main(void)
 
     SetTargetFPS(60);
 
+    Rectangle frontFrame = {0, 0, 32, 32};
+    Rectangle sideFrame = {64, 0, 32, 32};
+    Rectangle backFrame = {128, 0, 32, 32};
+
+   Matrix frontTransform =
+    MatrixMultiply(
+        MatrixRotateX(DEG2RAD * 90.0f),
+        MatrixTranslate(0.0f, 2.0f, 0.10f));
+
+Matrix sideTransform =
+    MatrixMultiply(
+        MatrixRotateY(DEG2RAD * 90.0f),
+        MatrixMultiply(
+            MatrixRotateX(DEG2RAD * 90.0f),
+            MatrixTranslate(0.10f, 2.0f, 0.0f)));
+
+Matrix backTransform =
+    MatrixMultiply(
+        MatrixRotateY(DEG2RAD * 180.0f),
+        MatrixMultiply(
+            MatrixRotateX(DEG2RAD * 90.0f),
+            MatrixTranslate(0.0f, 2.0f, -0.10f)));
+
     while (!WindowShouldClose())
     {
         // Update
         UpdatePlayer(&player);
 
         direction = GetDirectionFromAngle(cameraAngle, 8);
-
-        if (IsKeyDown(KEY_Q))
-            cameraAngle -= 0.02f;
-
-        if (IsKeyDown(KEY_E))
-            cameraAngle += 0.02f;
 
         float mouseDelta =
             GetMouseDelta().x;
@@ -136,7 +155,7 @@ int main(void)
 
         BeginMode3D(camera);
 
-        DrawPlane((Vector3){0, -2, 0}, (Vector2){20, 20}, DARKGRAY);
+        DrawPlane((Vector3){0, 0, 0}, (Vector2){20, 20}, DARKGRAY);
 
         Rectangle source = {
             direction * 32,
@@ -149,45 +168,56 @@ int main(void)
             {0.3f, 0, 0},
             {-0.3f, 0, 0}};
 
-        Rectangle frontFrame = {0, 0, 32, 32};
-        Rectangle sideFrame = {64, 0, 32, 32};
-        Rectangle backFrame = {128, 0, 32, 32};
-
         // DrawBillboardRec(camera, hero, frontFrame, positions[0], (Vector2){2, 4}, WHITE);
 
         //  DrawBillboardRec(camera, hero, sideFrame, positions[1], (Vector2){2, 4}, WHITE);
 
         //  DrawBillboardRec(camera, hero, backFrame, positions[2], (Vector2){2, 4}, WHITE);
 
-        Matrix transform1 =
-            MatrixMultiply(
-                MatrixRotateY(0.0f),
-                MatrixTranslate(
-                    0.0f,
-                    2.0f,
-                    0.0f));
+        float angleDegrees = cameraAngle * RAD2DEG;
 
-        Matrix transform2 =
-            MatrixMultiply(
-                MatrixRotateY(DEG2RAD * 45.0f),
-                MatrixTranslate(
-                    0.3f,
-                    2.0f,
-                    0.0f));
+        while (angleDegrees < 0)
+            angleDegrees += 360.0f;
 
-        Matrix transform3 =
-            MatrixMultiply(
-                MatrixRotateY(DEG2RAD * 90.0f),
-                MatrixTranslate(
-                    -0.3f,
-                    2.0f,
-                    0.0f));
+        while (angleDegrees >= 360.0f)
+            angleDegrees -= 360.0f;
 
-        DrawMesh(quadMesh, frontMat, transform1);
+            rlDisableBackfaceCulling();
 
-        DrawMesh(quadMesh, sideMat, transform2);
+      //  if (angleDegrees < 120.0f)
+            DrawMesh(quadMesh, frontMat, frontTransform);
 
-        DrawMesh(quadMesh, backMat, transform3);
+       // if (angleDegrees > 60.0f && angleDegrees < 300.0f)
+           DrawMesh(quadMesh, sideMat, sideTransform);
+
+      //  if (angleDegrees > 180.0f)
+          DrawMesh(quadMesh, backMat, backTransform);
+
+          rlEnableBackfaceCulling();
+        //   DrawCube(
+        // (Vector3){0,2,0},
+        // 1.0f,
+        // 2.0f,
+        // 0.1f,
+        // RED);
+
+        
+        
+           // DrawMesh(quadMesh, backMat, transform3);
+
+        //       DrawCube(
+        // (Vector3){0,2,0},
+        // 1.0f,
+        // 2.0f,
+        // 0.1f,
+        // PURPLE);
+        // DrawCube(
+        //     (Vector3){0,2,0},
+        //     1.0f,
+        //     2.0f,
+        //     0.1f,
+        //     PURPLE);
+
         //   DrawMesh(quadMesh, material, MatrixTranslate(player.position.x, player.position.y + 2.0f, player.position.z));
         // DrawBillboardRec(
         //     camera,
@@ -211,11 +241,17 @@ int main(void)
             0.01f,
             1.0f);
 
+        // DrawText(
+        //     TextFormat(
+        //         "Direction: %d",
+        //         direction),
+        //     10,
+        //     35,
+        //     20,
+        //   BLACK);
         DrawText(
-            TextFormat(
-                "Direction: %d",
-                direction),
-            10,
+            TextFormat("Angle Degrees: %.2f", angleDegrees),
+            20,
             35,
             20,
             BLACK);
